@@ -42,19 +42,25 @@ The config file is `BepInEx/config/dioksy.worldportal.cfg`. It's created the fir
 
 | Section | Option | Default | What it does |
 |---|---|---|---|
-| General | `MaxPortals` | `5` | Maximum portals per stone circle. A circle gets one per gap between its stones. |
-| General | `LeaveEntrance` | `false` | Leave the widest gap without a portal, as an entrance. |
+| General | `MaxPortals` | `5` | Maximum portals per stone circle, from 1 to 5. A circle gets one per gap between its stones. |
+| General | `LeaveEntrance` | `false` | Leave the widest gap without a portal, as an entrance. This means one portal fewer per circle. |
 | General | `OpenByBiome` | `true` | Portals open once you've been in their destination's biome. If off, the destination itself has to be explored on your map. |
 | General | `ReturnKey` | `G` | Key to return from a runestone you arrived at. |
-| General | `CircleLocations` | `StoneCircle` | Location prefab name prefixes that get portals. |
-| General | `TargetLocations` | `Dolmen,Runestone` | Location prefab name prefixes the portals lead to (*server*). |
+| General | `TargetLocations` | `Dolmen,Runestone` | Location prefab name prefixes the portals lead to (*server*). For example, add `StoneHenge` for the Plains' standing stones (`StoneHenge1`–`6`), but they usually have goblins around them. |
 | General | `GateLocations` | `Dolmen` | Destinations that get a two-way gate in their centre. Anything in `TargetLocations` without a runestone should be listed here too, or there's no way back. |
 | General | `UndiscoveredLocations` | *(empty)* | Destinations that are usable before you've discovered them. |
-| Bands | `AnchorPercentile` | `0.95` | Scales the latitude bands to the spread of stone circles in your world. |
-| Bands | `Band0` … `Band3` | *(see file)* | Biome weights for each band, from the centre line outward. `Edge` means the Ashlands in the south and the Deep North in the north. |
 | Ritual | `Enabled` | `true` | Turn the ritual on or off. |
 | Ritual | `Portals` | `5` | Same-named portals needed in one circle. |
 | Ritual | `CooldownDays` | `30` | In-game days between shifts (*server*). |
+
+### Bands
+
+> ⚠️ **Caution:** these options control where portals lead. Changing them changes the destinations of every portal in the world, and it can leave some biomes with few or no portals. The defaults were tuned by simulating 20 generated worlds.
+
+| Option | Default | What it does |
+|---|---|---|
+| `AnchorPercentile` | `0.95` | Scales the latitude bands to the spread of stone circles in your world. |
+| `Band0` … `Band3` | *(see file)* | Biome weights for each band, from the centre line outward. `Edge` means the Ashlands in the south and the Deep North in the north. |
 
 ## Compatibility
 

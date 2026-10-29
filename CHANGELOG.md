@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- `MaxPortals` is limited to 1–5.
+- `CircleLocations` is no longer a config option; portals are only in stone circles.
+- Config and README: clearer notes on `LeaveEntrance`, a `StoneHenge` example for `TargetLocations`, and a caution for the band settings.
+
 ## 0.4.0
 
 - First public release as **Ley Lines**.

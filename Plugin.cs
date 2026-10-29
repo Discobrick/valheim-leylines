@@ -22,7 +22,9 @@ namespace WorldPortal
         static ConfigEntry<int> MaxPortals;
         static ConfigEntry<float> BandAnchor;
         static ConfigEntry<KeyCode> ReturnHotkey;
-        static ConfigEntry<string> CircleLocations, TargetLocations, UndiscoveredLocations, GateLocations;
+        // Location prefab name prefixes that get portals. ponytail: not in the config until other circle-like locations are tested.
+        const string CircleLocations = "StoneCircle";
+        static ConfigEntry<string> TargetLocations, UndiscoveredLocations, GateLocations;
         static ConfigEntry<string>[] BandWeights;
         static GameObject SwirlTemplate;
         static bool loggedStones;
@@ -51,13 +53,12 @@ namespace WorldPortal
             RitualEnabled = Config.Bind("Ritual", "Enabled", true, "Building portals inside a stone circle strains the ley lines; enough of them with the same name reroll every circle's destinations.");
             RitualPortals = Config.Bind("Ritual", "Portals", 5, "Portals with the same name needed inside one stone circle.");
             RitualCooldownDays = Config.Bind("Ritual", "CooldownDays", 30, "In-game days the ley lines need to recover after a shift. Completing the ritual sooner crumbles the portals and restarts the cooldown. Read on the server.");
-            MaxPortals = Config.Bind("General", "MaxPortals", 5, "Max portals per stone circle. A circle gets one per gap between its stones.");
-            LeaveEntrance = Config.Bind("General", "LeaveEntrance", false, "Leave the widest gap between the stones without a portal, as an entrance. Off: every gap gets one; they're wide enough to walk past.");
+            MaxPortals = Config.Bind("General", "MaxPortals", 5, new ConfigDescription("Max portals per stone circle. A circle gets one per gap between its stones.", new AcceptableValueRange<int>(1, 5)));
+            LeaveEntrance = Config.Bind("General", "LeaveEntrance", false, "Leave the widest gap between the stones without a portal, as an entrance. This means one portal fewer per circle. Off: every gap gets one; they're wide enough to walk past.");
             OpenByBiome = Config.Bind("General", "OpenByBiome", true, "Portals open once you've set foot in their destination's biome. Off: only once the destination itself is explored on your map.");
-            CircleLocations = Config.Bind("General", "CircleLocations", "StoneCircle", "Location prefab name prefixes that get portals (comma separated).");
-            TargetLocations = Config.Bind("General", "TargetLocations", "Dolmen,Runestone", "Location prefab name prefixes the portals lead to (comma separated). Read on the server.");
+            TargetLocations = Config.Bind("General", "TargetLocations", "Dolmen,Runestone", "Location prefab name prefixes the portals lead to (comma separated). For example, add StoneHenge for the Plains' standing stones (StoneHenge1-6), but they usually have goblins around them. Read on the server.");
             UndiscoveredLocations = Config.Bind("General", "UndiscoveredLocations", "", "Destinations usable before you've discovered them (comma separated, empty = none). Portals to anything else stay dark until you have.");
-            BandAnchor = Config.Bind("Bands", "AnchorPercentile", 0.95f, "Circles get a latitude band from 0 (the world's east-west centre line) to 3, separately for the north and south half. The bands are scaled so this percentile of the circles' distance from the centre line is the far end of band 3; circles beyond it count as band 3. 1 = the farthest circle.");
+            BandAnchor = Config.Bind("Bands", "AnchorPercentile", 0.95f, "Caution: changing anything in this section changes where every portal leads. Circles get a latitude band from 0 (the world's east-west centre line) to 3, separately for the north and south half. The bands are scaled so this percentile of the circles' distance from the centre line is the far end of band 3; circles beyond it count as band 3. 1 = the farthest circle.");
             BandWeights = new[]
             {
                 Config.Bind("Bands", "Band0", "Meadows:45,BlackForest:45,Swamp:5,Mountain:5", "Biome weights for portals of circles nearest the centre line (Biome:weight, comma separated). Biomes: Meadows, BlackForest, Swamp, Mountain, Plains, Mistlands, AshLands, DeepNorth, or Edge = AshLands for southern circles and DeepNorth for northern ones."),
@@ -70,8 +71,8 @@ namespace WorldPortal
             Harmony.CreateAndPatchAll(typeof(Plugin));
         }
 
-        static bool Matches(string name, ConfigEntry<string> prefixes) =>
-            prefixes.Value.Split(',').Select(p => p.Trim()).Any(p => p.Length > 0 && name.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+        static bool Matches(string name, string prefixes) =>
+            prefixes.Split(',').Select(p => p.Trim()).Any(p => p.Length > 0 && name.StartsWith(p, StringComparison.OrdinalIgnoreCase));
 
         static string Save(Vector3 v) => FormattableString.Invariant($"{v.x},{v.y},{v.z}");
 
@@ -108,7 +109,7 @@ namespace WorldPortal
             player.m_customData.Remove(ReturnKey);
         }
 
-        static bool Reachable(Target t) => Matches(t.name, UndiscoveredLocations) || (OpenByBiome.Value
+        static bool Reachable(Target t) => Matches(t.name, UndiscoveredLocations.Value) || (OpenByBiome.Value
             ? Player.m_localPlayer && KnowsBiome(Player.m_localPlayer, t.biome)
             : IsExplored(Minimap.instance, t.pos));
 
@@ -257,7 +258,7 @@ namespace WorldPortal
             {
                 if (!ZNet.instance.IsServer()) return;
                 var targets = ZoneSystem.instance.m_locationInstances.Values
-                    .Where(l => Matches(l.m_location.m_prefabName, TargetLocations) || Matches(l.m_location.m_prefabName, CircleLocations)).ToList();
+                    .Where(l => Matches(l.m_location.m_prefabName, TargetLocations.Value) || Matches(l.m_location.m_prefabName, CircleLocations)).ToList();
                 var pkg = new ZPackage();
                 pkg.Write(targets.Count);
                 foreach (var l in targets)
@@ -446,7 +447,7 @@ namespace WorldPortal
         {
             if (!SwirlTemplate) return;
             var name = Utils.GetPrefabName(__instance.gameObject);
-            if (Matches(name, GateLocations))
+            if (Matches(name, GateLocations.Value))
                 Instantiate(SwirlTemplate, __instance.transform.position, __instance.transform.rotation, __instance.transform);
             if (Matches(name, CircleLocations))
                 PlacePortals(__instance);
