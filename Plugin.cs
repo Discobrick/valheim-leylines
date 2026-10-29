@@ -10,7 +10,7 @@ using Target = (string name, UnityEngine.Vector3 pos, Heightmap.Biome biome);
 
 namespace WorldPortal
 {
-    [BepInPlugin("dioksy.worldportal", "Ancient Ley Lines", "0.4.0")]
+    [BepInPlugin("dioksy.worldportal", "Ancient Ley Lines", "0.4.1")]
     public class Plugin : BaseUnityPlugin
     {
         // Last portal trip, kept in the character save: where we landed and the portal to go back to.

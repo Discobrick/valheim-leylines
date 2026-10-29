@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.1
 
 - Renamed to **Ancient Ley Lines** (Thunderstore package `Ancient_Ley_Lines`); another mod already uses the name Ley Lines.
 - `MaxPortals` is limited to 1–5.
