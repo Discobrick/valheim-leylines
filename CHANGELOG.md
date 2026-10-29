@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.0
+
+- The ritual has a secret name. Each portal built in a circle makes the stones whisper one of its runes, and everyone nearby hears it. Only that name moves the ley lines; any other does nothing. The name changes with every shift, and the stones stay silent while the ley lines recover. This replaces the "never the same name twice" rule.
+
 ## 0.4.1
 
 - Renamed to **Ancient Ley Lines** (Thunderstore package `Ancient_Ley_Lines`); another mod already uses the name Ley Lines.

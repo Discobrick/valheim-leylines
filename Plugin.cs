@@ -10,7 +10,7 @@ using Target = (string name, UnityEngine.Vector3 pos, Heightmap.Biome biome);
 
 namespace WorldPortal
 {
-    [BepInPlugin("dioksy.worldportal", "Ancient Ley Lines", "0.4.1")]
+    [BepInPlugin("dioksy.worldportal", "Ancient Ley Lines", "0.5.0")]
     public class Plugin : BaseUnityPlugin
     {
         // Last portal trip, kept in the character save: where we landed and the portal to go back to.
@@ -33,10 +33,29 @@ namespace WorldPortal
         // Each circle's planned destination per portal slot (null = nothing left to assign).
         static readonly List<(Vector3 circle, List<Target?> dests)> Plan = new List<(Vector3, List<Target?>)>();
 
-        // The ritual: enough portals in one stone circle, all with the same name, reroll the whole plan.
+        // The ritual: enough portals in one stone circle, all named the secret name, reroll the whole plan.
         // Shift count and last shift day are global keys ("name value"): saved with the world and synced to every client.
-        // Used names are stored as comma-separated stable hashes (global key values can't hold spaces).
-        const string ShiftKey = "worldportal_shift", LastShiftKey = "worldportal_lastshift", UsedNamesKey = "worldportal_names";
+        const string ShiftKey = "worldportal_shift", LastShiftKey = "worldportal_lastshift";
+
+        // The secret name changes every shift; the stones whisper it rune by rune as portals go up.
+        // Only letters with a single Elder Futhark rune (no C, Q, X, TH, NG, EI), so one rune is one letter.
+        static readonly string[] SecretNames =
+        {
+            "RAVEN", "FROST", "EMBER", "SKALD", "STORM", "SPEAR", "FJORD", "GRAVE", "BLOOD", "FLAME",
+            "STONE", "SWORD", "BLADE", "GHOST", "BONES", "FLINT", "SPIRE", "TROLL", "BALDR", "SURTR",
+            "NORNS", "RUNES", "WIGHT", "SLEET", "TIDES", "AEGIR", "ASHES", "EAGLE", "GLOOM", "AMBER",
+        };
+        static readonly Dictionary<char, string> Runes = new Dictionary<char, string>
+        {
+            ['F'] = "Fehu", ['U'] = "Uruz", ['A'] = "Ansuz", ['R'] = "Raidho", ['K'] = "Kenaz", ['G'] = "Gebo",
+            ['W'] = "Wunjo", ['V'] = "Wunjo", ['H'] = "Hagalaz", ['N'] = "Naudiz", ['I'] = "Isa", ['J'] = "Jera",
+            ['Y'] = "Jera", ['P'] = "Perthro", ['Z'] = "Algiz", ['S'] = "Sowilo", ['T'] = "Tiwaz", ['B'] = "Berkano",
+            ['E'] = "Ehwaz", ['M'] = "Mannaz", ['L'] = "Laguz", ['O'] = "Othala", ['D'] = "Dagaz",
+        };
+
+        // Same on server and clients: every world has its own sequence of names.
+        static string SecretName(int shift) =>
+            SecretNames[new System.Random(WorldGenerator.instance.GetSeed() ^ shift).Next(SecretNames.Length)];
         static ConfigEntry<bool> RitualEnabled, OpenByBiome, LeaveEntrance;
         static ConfigEntry<int> RitualPortals, RitualCooldownDays;
         static Plugin Instance;
@@ -50,8 +69,8 @@ namespace WorldPortal
         {
             Log = Logger;
             Instance = this;
-            RitualEnabled = Config.Bind("Ritual", "Enabled", true, "Building portals inside a stone circle strains the ley lines; enough of them with the same name reroll every circle's destinations.");
-            RitualPortals = Config.Bind("Ritual", "Portals", 5, "Portals with the same name needed inside one stone circle.");
+            RitualEnabled = Config.Bind("Ritual", "Enabled", true, "Building portals inside a stone circle strains the ley lines; enough of them named what the stones whisper reroll every circle's destinations.");
+            RitualPortals = Config.Bind("Ritual", "Portals", 5, "Portals named what the stones whisper needed inside one stone circle. The name has five runes, so at 5 each gate whispers one.");
             RitualCooldownDays = Config.Bind("Ritual", "CooldownDays", 30, "In-game days the ley lines need to recover after a shift. Completing the ritual sooner crumbles the portals and restarts the cooldown. Read on the server.");
             MaxPortals = Config.Bind("General", "MaxPortals", 5, new ConfigDescription("Max portals per stone circle. A circle gets one per gap between its stones.", new AcceptableValueRange<int>(1, 5)));
             LeaveEntrance = Config.Bind("General", "LeaveEntrance", false, "Leave the widest gap between the stones without a portal, as an entrance. This means one portal fewer per circle. Off: every gap gets one; they're wide enough to walk past.");
@@ -276,16 +295,14 @@ namespace WorldPortal
                 BuildPlan(GlobalInt(ShiftKey, 0));
             });
 
-            // Server decides. A name that already caused a shift: no reaction. Otherwise shift if the ley lines have
+            // Server decides. Not the secret name: no reaction. Otherwise shift if the ley lines have
             // recovered, else overload; either way the cooldown restarts and the ritualist's client crumbles the portals.
             ZRoutedRpc.instance.Register<Vector3, string>("WorldPortal_Ritual", (sender, circle, name) =>
             {
                 if (!ZNet.instance.IsServer()) return;
-                var usedNames = GlobalString(UsedNamesKey);
-                var hash = name.GetStableHashCode().ToString();
-                if (usedNames.Split(',').Contains(hash))
+                if (name != SecretName(GlobalInt(ShiftKey, 0)).ToLowerInvariant())
                 {
-                    ZRoutedRpc.instance.InvokeRoutedRPC(sender, "WorldPortal_NameUsed");
+                    ZRoutedRpc.instance.InvokeRoutedRPC(sender, "WorldPortal_NameUnknown");
                     return;
                 }
                 var day = EnvMan.instance.GetDay();
@@ -298,7 +315,6 @@ namespace WorldPortal
                 }
                 var shift = GlobalInt(ShiftKey, 0) + 1;
                 ZoneSystem.instance.SetGlobalKey($"{ShiftKey} {shift}");
-                ZoneSystem.instance.SetGlobalKey($"{UsedNamesKey} {(usedNames.Length > 0 ? usedNames + "," : "")}{hash}");
                 Log.LogInfo($"Ley lines shifted (shift {shift}) by a ritual at {circle}");
                 ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, "WorldPortal_Shifted", sender, shift, circle);
             });
@@ -323,8 +339,16 @@ namespace WorldPortal
                 GameCamera.instance.AddShake(player.transform.position, 30f, 2f, false);
                 player.Message(MessageHud.MessageType.Center, "The ley lines are overloaded. The stones reject the gates.", 0, null, false);
             });
-            ZRoutedRpc.instance.Register("WorldPortal_NameUsed", sender =>
-                Player.m_localPlayer?.Message(MessageHud.MessageType.Center, "The stones remember that name. They will not answer it twice.", 0, null, false));
+            ZRoutedRpc.instance.Register("WorldPortal_NameUnknown", sender =>
+                Player.m_localPlayer?.Message(MessageHud.MessageType.Center, "The stones do not know that name.", 0, null, false));
+            // Strain and whispers from a portal going up, heard by everyone near the circle.
+            ZRoutedRpc.instance.Register<Vector3, string, float>("WorldPortal_Strain", (sender, pos, message, shake) =>
+            {
+                var player = Player.m_localPlayer;
+                if (!player || Vector3.Distance(player.transform.position, pos) > 50f) return;
+                GameCamera.instance.AddShake(pos, 30f, shake, false);
+                player.Message(MessageHud.MessageType.Center, message, 0, null, false);
+            });
         }
 
         static string GlobalString(string key) =>
@@ -365,15 +389,17 @@ namespace WorldPortal
             var circle = CircleAt(pos);
             if (!circle) return;
             var count = PortalsIn(circle).Count;
+            // Silent while recovering, so the next name can't be learned early.
+            var runes = SecretName(GlobalInt(ShiftKey, 0)).Select(c => Runes[c]).ToList();
             string message;
             if (Recovering())
                 message = count >= RitualPortals.Value ? "The stones are silent. The ley lines have not recovered." : "The ley lines are still recovering.";
             else if (count >= RitualPortals.Value)
-                message = $"{(RitualPortals.Value == 5 ? "Five" : RitualPortals.Value.ToString())} gates, one name, and the stones will answer.";
+                message = $"{(RitualPortals.Value == 5 ? "Five" : RitualPortals.Value.ToString())} gates, one name. The stones chant: {string.Join(", ", runes)}.";
             else
-                message = Strain[Mathf.Clamp(count - 1 + Strain.Length - (RitualPortals.Value - 1), 0, Strain.Length - 1)];
-            GameCamera.instance.AddShake(pos, 30f, 0.4f * Mathf.Min(count, RitualPortals.Value), false);
-            Player.m_localPlayer.Message(MessageHud.MessageType.Center, message, 0, null, false);
+                message = Strain[Mathf.Clamp(count - 1 + Strain.Length - (RitualPortals.Value - 1), 0, Strain.Length - 1)]
+                    + (count <= runes.Count ? $" The stones whisper {runes[count - 1]}." : "");
+            ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, "WorldPortal_Strain", pos, message, 0.4f * Mathf.Min(count, RitualPortals.Value));
         }
 
         // The tag reaches the portal's owner by RPC, so check a moment after naming it.

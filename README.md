@@ -20,9 +20,9 @@ Ancient Ley Lines turns every stone circle into a hub of ancient portals. They o
 <details>
 <summary><b>The ritual (spoilers)</b></summary>
 
-Building portals inside a stone circle strains the ley lines, and the stones let you know. Build five, give them all the same name, and the stones answer: every circle in the world gets new destinations.
+Building portals inside a stone circle strains the ley lines, and the stones let you know. With each gate they whisper a rune, and everyone near the circle hears it. Build five, give them all the name the runes spell, and the stones answer: every circle in the world gets new destinations. Any other name, and the stones don't know it.
 
-The ley lines need time to recover: 30 in-game days by default. If you try again too soon, the gates crumble. The stones also remember every name that has moved them, and they won't answer the same one twice. The one who performs the ritual doesn't come through it unscathed.
+The ley lines need time to recover: 30 in-game days by default. While they recover the stones stay silent, and if you try again too soon, the gates crumble. Each shift the stones take a new name. The one who performs the ritual doesn't come through it unscathed.
 
 </details>
 
