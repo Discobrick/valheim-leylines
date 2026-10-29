@@ -50,7 +50,7 @@ The config file is `BepInEx/config/dioksy.worldportal.cfg`. It's created the fir
 | General | `GateLocations` | `Dolmen` | Destinations that get a two-way gate in their centre. Anything in `TargetLocations` without a runestone should be listed here too, or there's no way back. |
 | General | `UndiscoveredLocations` | *(empty)* | Destinations that are usable before you've discovered them. |
 | Ritual | `Enabled` | `true` | Turn the ritual on or off. |
-| Ritual | `Portals` | `5` | Same-named portals needed in one circle. |
+| Ritual | `Portals` | `5` | Portals bearing the secret name needed in one circle. The name has five runes, so at 5 each gate whispers one. |
 | Ritual | `CooldownDays` | `30` | In-game days between shifts (*server*). |
 
 ### Bands
