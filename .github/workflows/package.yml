@@ -44,11 +44,11 @@ jobs:
         run: |
           expected=""
           [[ "$GITHUB_REF" == refs/tags/v* ]] && expected="${GITHUB_REF_NAME#v}"
-          python3 .github/check_package.py dist/LeyLines-*.zip $expected
+          python3 .github/check_package.py dist/Ancient_Ley_Lines-*.zip $expected
 
       - uses: actions/upload-artifact@v4
         with:
-          name: LeyLines-package
+          name: Ancient_Ley_Lines-package
           path: dist/*.zip
 
       - name: Release
@@ -58,4 +58,4 @@ jobs:
         # Notes: the newest CHANGELOG.md section (everything up to the second "## " heading).
         run: |
           awk '/^## /{if (seen) exit; seen=1; next} seen' CHANGELOG.md > notes.md
-          gh release create "$GITHUB_REF_NAME" dist/*.zip --title "Ley Lines $GITHUB_REF_NAME" --notes-file notes.md
+          gh release create "$GITHUB_REF_NAME" dist/*.zip --title "Ancient Ley Lines $GITHUB_REF_NAME" --notes-file notes.md

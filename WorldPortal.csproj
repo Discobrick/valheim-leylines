@@ -33,7 +33,7 @@
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PluginsDir)\WorldPortal" />
   </Target>
 
-  <!-- Release builds also produce the Thunderstore upload: dist/LeyLines-<version>.zip. Version comes from manifest.json. -->
+  <!-- Release builds also produce the Thunderstore upload: dist/Ancient_Ley_Lines-<version>.zip. Version comes from manifest.json. -->
   <Target Name="Package" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
     <PropertyGroup>
       <PackageVersion>$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('manifest.json')), '"version_number":\s*"([^"]+)"').Groups[1].Value)</PackageVersion>
@@ -45,7 +45,7 @@
     <Copy SourceFiles="manifest.json;icon.png;README.md;CHANGELOG.md" DestinationFolder="$(Stage)" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(Stage)\plugins" />
     <MakeDir Directories="dist" />
-    <ZipDirectory SourceDirectory="$(Stage)" DestinationFile="dist\LeyLines-$(PackageVersion).zip" Overwrite="true" />
+    <ZipDirectory SourceDirectory="$(Stage)" DestinationFile="dist\Ancient_Ley_Lines-$(PackageVersion).zip" Overwrite="true" />
   </Target>
 
 </Project>

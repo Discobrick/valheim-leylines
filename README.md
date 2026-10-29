@@ -1,8 +1,8 @@
-# Ley Lines
+# Ancient Ley Lines
 
 The stone circles of the Meadows were never just ruins. Each one sits on a knot of ley lines, and the gaps between its stones are gates to distant places: a quiet dolmen in the Meadows, a runestone deep in the Swamp, the burning edge of the Ashlands.
 
-Ley Lines turns every stone circle into a hub of ancient portals. They open as you explore, so the world gets smaller the more of it you know.
+Ancient Ley Lines turns every stone circle into a hub of ancient portals. They open as you explore, so the world gets smaller the more of it you know.
 
 ## Features
 
@@ -28,11 +28,11 @@ The ley lines need time to recover: 30 in-game days by default. If you try again
 
 ## Installation
 
-**With a mod manager (recommended):** install *Ley Lines* through r2modman or Thunderstore Mod Manager.
+**With a mod manager (recommended):** install *Ancient Ley Lines* through r2modman or Thunderstore Mod Manager.
 
 **By hand:**
 1. Install [BepInExPack_Valheim](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/).
-2. Copy `WorldPortal.dll` into `Valheim/BepInEx/plugins/LeyLines/`.
+2. Copy `WorldPortal.dll` into `Valheim/BepInEx/plugins/AncientLeyLines/`.
 
 **Multiplayer:** install it on the server and on every client. The server sends the list of locations, and it decides when the ritual shifts the ley lines.
 

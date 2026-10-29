@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Renamed to **Ancient Ley Lines** (Thunderstore package `Ancient_Ley_Lines`); another mod already uses the name Ley Lines.
 - `MaxPortals` is limited to 1–5.
 - `CircleLocations` is no longer a config option; portals are only in stone circles.
 - Config and README: clearer notes on `LeaveEntrance`, a `StoneHenge` example for `TargetLocations`, and a caution for the band settings.
