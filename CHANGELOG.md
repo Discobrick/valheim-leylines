@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+
+- README: the `Portals` config row now describes the secret name.
+
 ## 0.5.0
 
 - The ritual has a secret name. Each portal built in a circle makes the stones whisper one of its runes, and everyone nearby hears it. Only that name moves the ley lines; any other does nothing. The name changes with every shift, and the stones stay silent while the ley lines recover. This replaces the "never the same name twice" rule.
