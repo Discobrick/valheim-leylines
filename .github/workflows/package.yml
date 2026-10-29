@@ -1,0 +1,61 @@
+# Builds the Thunderstore package on every push and pull request.
+# Pushing a v<version> tag also attaches the zip to a GitHub release.
+name: Package
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write # for the release on tags
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # The game DLLs come from the Valheim dedicated server (free, anonymous SteamCMD login), so none are committed.
+      # Cache key changes every run so the cache always holds the latest server; app_update only downloads the difference.
+      - uses: actions/cache@v4
+        with:
+          path: valheim_server
+          key: valheim-server-${{ github.run_id }}
+          restore-keys: valheim-server-
+
+      - name: Download Valheim dedicated server
+        run: |
+          mkdir -p steamcmd && curl -sSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar -xz -C steamcmd
+          ./steamcmd/steamcmd.sh +force_install_dir "$PWD/valheim_server" +login anonymous +app_update 896660 +quit
+          test -f valheim_server/valheim_server_Data/Managed/assembly_valheim.dll
+
+      - name: Build package
+        run: dotnet build -c Release -p:Managed="$PWD/valheim_server/valheim_server_Data/Managed"
+
+      - name: Check package
+        # On tags, the manifest version must equal the tag without its leading v.
+        run: |
+          expected=""
+          [[ "$GITHUB_REF" == refs/tags/v* ]] && expected="${GITHUB_REF_NAME#v}"
+          python3 .github/check_package.py dist/LeyLines-*.zip $expected
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LeyLines-package
+          path: dist/*.zip
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Notes: the newest CHANGELOG.md section (everything up to the second "## " heading).
+        run: |
+          awk '/^## /{if (seen) exit; seen=1; next} seen' CHANGELOG.md > notes.md
+          gh release create "$GITHUB_REF_NAME" dist/*.zip --title "Ley Lines $GITHUB_REF_NAME" --notes-file notes.md

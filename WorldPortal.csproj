@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ValheimDir Condition="'$(ValheimDir)' == ''">D:\Games\steamapps\common\Valheim</ValheimDir>
+    <!-- CI points this at the dedicated server's valheim_server_Data/Managed instead -->
+    <Managed Condition="'$(Managed)' == ''">$(ValheimDir)\valheim_Data\Managed</Managed>
+    <RestoreAdditionalProjectSources>https://nuget.bepinex.dev/v3/index.json</RestoreAdditionalProjectSources>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Same BepInEx/HarmonyX that BepInExPack_Valheim ships -->
+    <PackageReference Include="BepInEx.Core" Version="5.4.21" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="assembly_valheim" HintPath="$(Managed)\assembly_valheim.dll" Private="false" />
+    <Reference Include="assembly_guiutils" HintPath="$(Managed)\assembly_guiutils.dll" Private="false" />
+    <Reference Include="assembly_utils" HintPath="$(Managed)\assembly_utils.dll" Private="false" />
+    <Reference Include="UnityEngine" HintPath="$(Managed)\UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(Managed)\UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="UnityEngine.PhysicsModule" HintPath="$(Managed)\UnityEngine.PhysicsModule.dll" Private="false" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- r2modman profile; override with -p:PluginsDir=... -->
+    <PluginsDir Condition="'$(PluginsDir)' == ''">$(APPDATA)\r2modmanPlus-local\Valheim\profiles\Default\BepInEx\plugins</PluginsDir>
+  </PropertyGroup>
+
+  <Target Name="Deploy" AfterTargets="Build" Condition="Exists('$(PluginsDir)')">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PluginsDir)\WorldPortal" />
+  </Target>
+
+  <!-- Release builds also produce the Thunderstore upload: dist/LeyLines-<version>.zip. Version comes from manifest.json. -->
+  <Target Name="Package" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <PropertyGroup>
+      <PackageVersion>$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('manifest.json')), '"version_number":\s*"([^"]+)"').Groups[1].Value)</PackageVersion>
+      <Stage>$(IntermediateOutputPath)package</Stage>
+      <PluginVersion>$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('Plugin.cs')), 'BepInPlugin\([^)]*"([0-9.]+)"\)').Groups[1].Value)</PluginVersion>
+    </PropertyGroup>
+    <Error Condition="'$(PluginVersion)' != '$(PackageVersion)'" Text="manifest.json is version $(PackageVersion) but the [BepInPlugin] version in Plugin.cs differs." />
+    <RemoveDir Directories="$(Stage)" />
+    <Copy SourceFiles="manifest.json;icon.png;README.md;CHANGELOG.md" DestinationFolder="$(Stage)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(Stage)\plugins" />
+    <MakeDir Directories="dist" />
+    <ZipDirectory SourceDirectory="$(Stage)" DestinationFile="dist\LeyLines-$(PackageVersion).zip" Overwrite="true" />
+  </Target>
+
+</Project>
